@@ -31,10 +31,10 @@ cd foodgram/infra
 ```
 SECRET_KEY='указать секретный ключ'
 ALLOWED_HOSTS='указать имя или IP хоста'
-POSTGRES_DB=kittygram
-POSTGRES_USER=kittygram_user
-POSTGRES_PASSWORD=kittygram_password
-DB_NAME=kittygram
+POSTGRES_DB=foodgram
+POSTGRES_USER=foodgram_user
+POSTGRES_PASSWORD=foodgram_password
+DB_NAME=foodgram
 DB_HOST=db
 DEBUG=False
 ```
