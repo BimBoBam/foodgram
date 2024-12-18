@@ -52,4 +52,3 @@ const About = ({ updateOrders, orders }) => {
 }
 
 export default About
-

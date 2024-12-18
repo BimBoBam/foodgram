@@ -1,0 +1,50 @@
+volumes:
+  pg:
+  static:
+  media:
+  redoc:
+
+services:
+  db:
+    image: postgres:13
+    restart: always
+    volumes:
+      - pg:/var/lib/postgresql/data/
+    env_file:
+      - ../.env
+
+  backend:
+    image: bimbobam/foodgram_backend:latest
+    restart: always
+    volumes:
+      - static:/backend_static/
+      - media:/app/media/
+      - redoc:/app/api/docs/
+    env_file:
+      - ../.env
+    depends_on:
+      - db
+
+  frontend:
+    image: bimbobam/foodgram_frontend:latest
+    volumes:
+      - static:/frontend_static
+    command: cp -r /app/build/. /frontend_static/
+    env_file:
+      - ../.env
+
+  gateway:
+    image: bimbobam/foodgram_gateway:latest
+    restart: always
+    ports:
+      - "9090:80"
+    volumes:
+      - redoc:/usr/share/nginx/html/api/docs/
+      - static:/staticfiles/
+      - media:/app/media/
+    env_file:
+      - ../.env
+    depends_on:
+      - frontend
+      - backend
+      - db
