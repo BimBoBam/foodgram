@@ -23,7 +23,7 @@ git clone https://github.com/BimBoBam/foodgram
 
 Перейти в директорию
 ```
-cd foodgram/infra
+cd foodgram
 ```
 
 Создать файл .evn для хранения ключей:
@@ -37,6 +37,11 @@ POSTGRES_PASSWORD=foodgram_password
 DB_NAME=foodgram
 DB_HOST=db
 DEBUG=False
+```
+
+Перейти в директорию
+```
+cd foodgram/infra
 ```
 
 Запустить docker-compose.production:
