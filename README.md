@@ -21,7 +21,7 @@ Foodgram - продуктовый помощник с базой кулинар�
 git clone https://github.com/BimBoBam/foodgram
 ```
 
-Перейти в директорию
+Перейти в директорию foodgram
 ```
 cd foodgram
 ```
@@ -39,9 +39,9 @@ DB_HOST=db
 DEBUG=False
 ```
 
-Перейти в директорию
+Перейти в директорию infra
 ```
-cd foodgram/infra
+cd infra
 ```
 
 Запустить docker-compose.production:
