@@ -1,7 +1,4 @@
-import base64
-
 from django.contrib.auth import get_user_model
-from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_extra_fields.fields import Base64ImageField
@@ -34,8 +31,8 @@ class UserSerializer(UserSerializer):
 
     def get_is_subscribed(self, obj):
         request = self.context.get('request')
-        return ((request.user.is_authenticated or request is None) and 
-                request.user.follower.filter(author=obj).exists())
+        return ((request.user.is_authenticated or request is None)
+                and request.user.follower.filter(author=obj).exists())
 
 
 class UserCreateSerializer(UserCreateSerializer):

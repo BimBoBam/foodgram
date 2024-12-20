@@ -1,9 +1,9 @@
 import csv
 
 from django.core.management.base import BaseCommand
+from django.conf import settings
 from django.db import IntegrityError
 
-from django.conf import settings
 from recipes.models import Ingredient
 
 
@@ -34,7 +34,7 @@ class Command(BaseCommand):
                     if created:
                         success_count += 1
                     if not created:
-                        self.stdout.write(f"Ingredient {obj} already" 
+                        self.stdout.write(f"Ingredient {obj} already"
                                           "exists in database", ending='')
                 except IntegrityError as err:
                     self.stdout.write(f"Error in row {row}:"
