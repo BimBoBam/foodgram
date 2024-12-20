@@ -6,13 +6,18 @@ from foodgram import constants as c
 
 
 class User(AbstractUser):
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = (
+        'username',
+        'first_name',
+        'last_name')
+
     username = models.CharField(
         max_length=c.USERNAME_MAX_LENGTH,
         unique=True,
-        blank=False,
         null=False,
         validators=[RegexValidator(
-            regex=r'^[\w.@+-]+$',
+            regex=c.REGEX,
             message='Username contains restricted symbols. Please use only '
                     'letters, numbers and .@+- symbols',
         ), ],
@@ -21,7 +26,6 @@ class User(AbstractUser):
     email = models.EmailField(
         max_length=c.EMAIL_MAX_LENGTH,
         unique=True,
-        blank=False,
         null=False,
         verbose_name='Email address',
     )
@@ -39,11 +43,6 @@ class User(AbstractUser):
         null=True,
         upload_to='media/avatars/',
     )
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = (
-        'username',
-        'first_name',
-        'last_name')
 
     class Meta:
         verbose_name = 'User'

@@ -3,7 +3,7 @@ import csv
 from django.core.management.base import BaseCommand
 from django.db import IntegrityError
 
-from foodgram import settings
+from django.conf import settings
 from recipes.models import Ingredient
 
 
@@ -15,7 +15,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         success_count = 0
-        print('Loading data...')
+        self.stdout.write("Loading data...", ending='')
         with open(
                 f'{settings.BASE_DIR}/data/ingredients.csv',
                 'r',
@@ -34,7 +34,10 @@ class Command(BaseCommand):
                     if created:
                         success_count += 1
                     if not created:
-                        print(f'Ingredient {obj} already exists in database')
+                        self.stdout.write(f"Ingredient {obj} already" 
+                                          "exists in database", ending='')
                 except IntegrityError as err:
-                    print(f'Error in row {row}: {err}')
-        print(f'{success_count} entries were imported from .csv file.')
+                    self.stdout.write(f"Error in row {row}:"
+                                      f"{err}", ending='')
+        self.stdout.write(f"{success_count} entries were"
+                          "imported from .csv file.", ending='')

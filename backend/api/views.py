@@ -16,7 +16,7 @@ from rest_framework.reverse import reverse
 from api.filters import IngredientFilter, RecipeFilter
 from api.pagination import CustomLimitPagination
 from api.permissions import IsAdminAuthorOrReadOnly
-from api.serializers import (AvatarSerializer, CustomUserSerializer,
+from api.serializers import (AvatarSerializer, UserSerializer,
                              FavoriteRecipeSerializer, IngredientSerializer,
                              RecipeReadSerializer, RecipeWriteSerializer,
                              SubscriberDetailSerializer, SubscriberSerializer,
@@ -28,9 +28,9 @@ from users.models import Follow
 User = get_user_model()
 
 
-class CustomUserViewSet(UserViewSet):
+class UserViewSet(UserViewSet):
     queryset = User.objects.all()
-    serializer_class = CustomUserSerializer
+    serializer_class = UserSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
     pagination_class = CustomLimitPagination
 
@@ -105,7 +105,7 @@ class CustomUserViewSet(UserViewSet):
             )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        elif self.request.method == 'DELETE':
+        else:
             if not Follow.objects.filter(
                     user=user, author=author
             ).exists():

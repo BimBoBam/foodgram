@@ -42,11 +42,6 @@ class Tag(models.Model):
     slug = models.SlugField(
         max_length=c.TAG_SLUG_MAX_LENGTH,
         unique=True,
-        validators=[RegexValidator(
-            regex=r'^[-a-zA-Z0-9_]+$',
-            message='Slug contains restricted symbols. Please use only '
-                    'letters, numbers and _ symbol',
-        ), ],
         verbose_name='Tag slug',
         help_text='Tag slug',
     )
@@ -71,7 +66,6 @@ class Recipe(models.Model):
     )
     ingredients = models.ManyToManyField(
         Ingredient,
-        blank=False,
         through='RecipeIngredient',
         related_name='recipes',
         verbose_name='Recipe ingredients',
@@ -119,13 +113,13 @@ class RecipeIngredient(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='ingredient_list',
+        related_name='ingredient_lists',
         verbose_name='Recipe'
     )
     ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
-        related_name='ingredient_recipe',
+        related_name='ingredient_recipes',
         verbose_name='Ingredient'
     )
     amount = models.PositiveSmallIntegerField(
@@ -155,13 +149,13 @@ class RecipeTags(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='tag_list',
+        related_name='tags_list',
         verbose_name='Recipe'
     )
     tag = models.ForeignKey(
         Tag,
         on_delete=models.CASCADE,
-        related_name='tag_recipe',
+        related_name='tags_recipe',
         verbose_name='Tag'
     )
 
@@ -178,13 +172,13 @@ class Favorite(models.Model):
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='favorite',
+        related_name='favorites',
         verbose_name='Favorite user',
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='favorite',
+        related_name='favorites',
         verbose_name='Favorite recipe',
     )
 
