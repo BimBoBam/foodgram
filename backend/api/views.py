@@ -13,6 +13,9 @@ from rest_framework.permissions import (AllowAny, IsAuthenticated,
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 
+from users.models import Follow
+from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
+                            ShoppingList, Tag)
 from api.filters import IngredientFilter, RecipeFilter
 from api.pagination import CustomLimitPagination
 from api.permissions import IsAdminAuthorOrReadOnly
@@ -21,9 +24,7 @@ from api.serializers import (AvatarSerializer,
                              RecipeReadSerializer, RecipeWriteSerializer,
                              SubscriberDetailSerializer, SubscriberSerializer,
                              TagSerializer, UserSerializer)
-from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
-                            ShoppingList, Tag)
-from users.models import Follow
+
 
 User = get_user_model()
 
