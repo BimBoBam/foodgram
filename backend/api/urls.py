@@ -2,7 +2,7 @@ from django.urls import include, path
 from django.views.generic import TemplateView
 from rest_framework.routers import DefaultRouter
 
-from api.views import (UserViewSet, IngredientViewSet, RecipeViewSet,
+from api.views import (ViewSetUser, IngredientViewSet, RecipeViewSet,
                        TagViewSet)
 
 app_name = 'api'
@@ -11,7 +11,7 @@ router = DefaultRouter()
 router.register('ingredients', IngredientViewSet, 'ingredients')
 router.register('recipes', RecipeViewSet, 'recipes')
 router.register('tags', TagViewSet, 'tags')
-router.register('users', UserViewSet, 'users')
+router.register('users', ViewSetUser, 'users')
 
 urlpatterns = [
     path('', include(router.urls)),

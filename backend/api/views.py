@@ -5,7 +5,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.http import require_GET
 from django_filters.rest_framework import DjangoFilterBackend
-import djoser.views
+from djoser.views import UserViewSet
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import (AllowAny, IsAuthenticated,
@@ -13,25 +13,24 @@ from rest_framework.permissions import (AllowAny, IsAuthenticated,
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 
-from users.models import Follow
-from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
-                            ShoppingList, Tag)
 from api.filters import IngredientFilter, RecipeFilter
 from api.pagination import LimitPagination
 from api.permissions import IsAdminAuthorOrReadOnly
 from api.serializers import (AvatarSerializer,
                              FavoriteRecipeSerializer, IngredientSerializer,
-                             RecipeReadSerializer, RecipeWriteSerializer,
+                             RecipeReadSerializer, RecipeWriteSerializer, SerializerUser,
                              SubscriberDetailSerializer, SubscriberSerializer,
-                             TagSerializer, UserSerializer)
-
+                             TagSerializer)
+from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
+                            ShoppingList, Tag)
+from users.models import Follow
 
 User = get_user_model()
 
 
-class UserViewSet(djoser.views.UserViewSet):
+class ViewSetUser(UserViewSet):
     queryset = User.objects.all()
-    serializer_class = UserSerializer
+    serializer_class = SerializerUser
     permission_classes = (IsAuthenticatedOrReadOnly,)
     pagination_class = LimitPagination
 
@@ -106,7 +105,7 @@ class UserViewSet(djoser.views.UserViewSet):
             )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        else:
+        elif self.request.method == 'DELETE':
             if not Follow.objects.filter(
                     user=user, author=author
             ).exists():
