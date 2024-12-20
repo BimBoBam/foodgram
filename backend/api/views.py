@@ -16,9 +16,9 @@ from rest_framework.reverse import reverse
 from api.filters import IngredientFilter, RecipeFilter
 from api.pagination import LimitPagination
 from api.permissions import IsAdminAuthorOrReadOnly
-from api.serializers import (AvatarSerializer,
-                             FavoriteRecipeSerializer, IngredientSerializer,
-                             RecipeReadSerializer, RecipeWriteSerializer, SerializerUser,
+from api.serializers import (AvatarSerializer,FavoriteRecipeSerializer,
+                              IngredientSerializer,RecipeReadSerializer,
+                              RecipeWriteSerializer, SerializerUser,
                              SubscriberDetailSerializer, SubscriberSerializer,
                              TagSerializer)
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
