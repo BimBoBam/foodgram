@@ -16,11 +16,11 @@ from rest_framework.reverse import reverse
 from api.filters import IngredientFilter, RecipeFilter
 from api.pagination import CustomLimitPagination
 from api.permissions import IsAdminAuthorOrReadOnly
-from api.serializers import (AvatarSerializer, UserSerializer,
+from api.serializers import (AvatarSerializer,
                              FavoriteRecipeSerializer, IngredientSerializer,
                              RecipeReadSerializer, RecipeWriteSerializer,
                              SubscriberDetailSerializer, SubscriberSerializer,
-                             TagSerializer)
+                             TagSerializer, UserSerializer)
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                             ShoppingList, Tag)
 from users.models import Follow
