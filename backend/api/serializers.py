@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
-from djoser.serializers import UserCreateSerializer, UserSerializer
+import djoser.serializers
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 
@@ -12,8 +12,7 @@ from users.models import Follow
 User = get_user_model()
 
 
-class UserSerializer(UserSerializer):
-
+class UserSerializer(djoser.serializers.UserSerializer):
     is_subscribed = serializers.SerializerMethodField()
     avatar = Base64ImageField(allow_null=True, required=False)
 
@@ -35,7 +34,7 @@ class UserSerializer(UserSerializer):
                 and request.user.follower.filter(author=obj).exists())
 
 
-class UserCreateSerializer(UserCreateSerializer):
+class UserCreateSerializer(djoser.serializers.UserCreateSerializer):
     password = serializers.CharField(write_only=True)
 
     class Meta:

@@ -5,7 +5,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.http import require_GET
 from django_filters.rest_framework import DjangoFilterBackend
-from djoser.views import UserViewSet
+import djoser.views
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import (AllowAny, IsAuthenticated,
@@ -29,7 +29,7 @@ from api.serializers import (AvatarSerializer,
 User = get_user_model()
 
 
-class UserViewSet(UserViewSet):
+class UserViewSet(djoser.views.UserViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
