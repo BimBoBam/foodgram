@@ -19,10 +19,10 @@ from api.filters import IngredientFilter, RecipeFilter
 from api.pagination import LimitPagination
 from api.permissions import IsAdminAuthorOrReadOnly
 from api.serializers import (AvatarSerializer, FavoriteRecipeSerializer,
-                             FavoriteRSerializer,
                              IngredientSerializer, RecipeReadSerializer,
                              RecipeWriteSerializer, SerializerUser,
-                             ShoppingListSerializer, SubscriberDetailSerializer,
+                             ShoppingListSerializer,
+                             SubscriberDetailSerializer,
                              TagSerializer)
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                             ShoppingList, Tag)
@@ -87,7 +87,8 @@ class ViewSetUser(UserViewSet):
         author = get_object_or_404(User, id=id)
         data = {'user': user.id, 'author': author.id}
         if request.method == 'POST':
-            serializer = SerializerUser(data=data, context={'request': request})
+            serializer = SerializerUser(data=data,
+                                        context={'request': request})
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data,

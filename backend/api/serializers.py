@@ -106,7 +106,7 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
             'measurement_unit',
             'amount'
         )
-    
+
     def validate_id(self, value):
         return get_object_or_404(Ingredient, id=value)
 
@@ -197,7 +197,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
 
         return value
 
-    def validate(self, value):
+    def validate_ingredients(self, value):
         if not value:
             raise serializers.ValidationError(
                 'Please add ingredient'
@@ -311,12 +311,6 @@ class SubscriberSerializer(serializers.ModelSerializer):
 
 class FavoriteRecipeSerializer(ShortRecipeSerializer):
     image = Base64ImageField()
-
-
-class FavoriteRSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Favorite
-        fields = ('user', 'recipe')
 
     def validate(self, data):
         user = self.context['request'].user
