@@ -350,3 +350,4 @@ class ShoppingListSerializer(serializers.ModelSerializer):
             'user': instance.user.username,
             'recipe': instance.recipe.id,
         }
+
