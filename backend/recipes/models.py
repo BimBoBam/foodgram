@@ -19,7 +19,7 @@ class Ingredient(models.Model):
     )
 
     class Meta:
-        ordering = ['-id']
+        ordering = ['name']
         verbose_name = 'Ingredient'
         verbose_name_plural = 'Ingredients'
         constraints = (
@@ -47,6 +47,7 @@ class Tag(models.Model):
     )
 
     class Meta:
+        ordering = ['name']
         verbose_name = 'Tag'
         verbose_name_plural = 'Tags'
 
@@ -101,7 +102,7 @@ class Recipe(models.Model):
     )
 
     class Meta:
-        ordering = ('-id',)
+        ordering = ['name']
         verbose_name = 'Recipe'
         verbose_name_plural = 'Recipes'
 
@@ -131,7 +132,7 @@ class RecipeIngredient(models.Model):
     )
 
     class Meta:
-        ordering = ['-id']
+        ordering = ['recipe']
         verbose_name = 'Ingredient amount'
         verbose_name_plural = 'Ingredient amounts'
         constraints = (
@@ -160,7 +161,7 @@ class RecipeTags(models.Model):
     )
 
     class Meta:
-        ordering = ('-id',)
+        ordering = ['recipe']
         verbose_name = 'Recipe tag'
         verbose_name_plural = 'Recipe tags'
 
@@ -183,7 +184,7 @@ class Favorite(models.Model):
     )
 
     class Meta:
-        ordering = ['-id']
+        ordering = ['name']
         verbose_name = 'Favorite'
         verbose_name_plural = 'Favorites'
 

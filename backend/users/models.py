@@ -1,8 +1,14 @@
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
 
 from foodgram import constants as c
+
+
+def validate_username_not_me(value):
+    if value.lower() == "me":
+        raise ValidationError("Username 'me' is not allowed.")
 
 
 class User(AbstractUser):
@@ -20,7 +26,7 @@ class User(AbstractUser):
             regex=c.REGEX,
             message='Username contains restricted symbols. Please use only '
                     'letters, numbers and .@+- symbols',
-        ), ],
+        ), validate_username_not_me],
         verbose_name='Unique username',
     )
     email = models.EmailField(

@@ -7,6 +7,7 @@ from recipes.models import Ingredient, Recipe, Tag
 class RecipeIngredientsInLine(admin.TabularInline):
     model = Recipe.ingredients.through
     extra = c.INLINE_EXTRA
+    min_num = c.MIN_NUM_ING
 
 
 class RecipeTagsInLine(admin.TabularInline):
@@ -24,7 +25,7 @@ class IngredientAdmin(admin.ModelAdmin):
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'text', 'author')
-    search_fields = ('name', 'author')
+    search_fields = ('name', 'author__username')
     inlines = (RecipeIngredientsInLine, RecipeTagsInLine)
     empty_value_display = '-empty-'
 

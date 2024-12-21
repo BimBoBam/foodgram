@@ -1,25 +1,28 @@
-from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.http import require_GET
-from django_filters.rest_framework import DjangoFilterBackend
-from djoser.views import UserViewSet
+
+from django.contrib.auth import get_user_model
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import (AllowAny, IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
+from djoser.views import UserViewSet
+
+from django_filters.rest_framework import DjangoFilterBackend
 
 from api.filters import IngredientFilter, RecipeFilter
 from api.pagination import LimitPagination
 from api.permissions import IsAdminAuthorOrReadOnly
 from api.serializers import (AvatarSerializer, FavoriteRecipeSerializer,
+                             FavoriteRSerializer,
                              IngredientSerializer, RecipeReadSerializer,
                              RecipeWriteSerializer, SerializerUser,
-                             SubscriberDetailSerializer, SubscriberSerializer,
+                             ShoppingListSerializer, SubscriberDetailSerializer,
                              TagSerializer)
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                             ShoppingList, Tag)
@@ -78,47 +81,30 @@ class ViewSetUser(UserViewSet):
         )
         return self.get_paginated_response(serializer.data)
 
-    @action(
-        detail=True,
-        methods=('post', 'delete'),
-    )
+    @action(detail=False, methods=('post', 'delete'))
     def subscribe(self, request, id):
         user = request.user
         author = get_object_or_404(User, id=id)
-
-        if user == author:
+        data = {'user': user.id, 'author': author.id}
+        if request.method == 'POST':
+            serializer = SerializerUser(data=data, context={'request': request})
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data,
+                                status=status.HTTP_201_CREATED)
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+        serializer = SerializerUser(data=data, context={'request': request})
+        if serializer.is_valid():
+            subscription = Follow.objects.filter(
+                user=user, author=author).first()
+            if subscription:
+                subscription.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
             return Response(
-                {'errors': "You can't (un)subscribe to yourself"},
-                status=status.HTTP_400_BAD_REQUEST,
+                {'errors': 'You are not subscribed to this user'},
+                status=status.HTTP_400_BAD_REQUEST
             )
-
-        if self.request.method == 'POST':
-            if Follow.objects.filter(user=user, author=author).exists():
-                return Response(
-                    {'errors': 'You already follow this user'},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            queryset = Follow.objects.create(author=author, user=user)
-            serializer = SubscriberSerializer(
-                queryset, context={'request': request}
-            )
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        elif self.request.method == 'DELETE':
-            if not Follow.objects.filter(
-                    user=user, author=author
-            ).exists():
-                return Response(
-                    {'errors': 'You are not subscribed to this user'},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            subscription = get_object_or_404(
-                Follow, user=user, author=author
-            )
-            subscription.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
@@ -172,29 +158,22 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def shopping_cart(self, request, pk):
         user = request.user
         recipe = get_object_or_404(Recipe, id=pk)
+
         if request.method == 'POST':
-            if ShoppingList.objects.filter(recipe=recipe, user=user).exists():
-                return Response(
-                    {
-                        'detail': f'Recipe "{recipe.name}" was already added '
-                                  'to shopping list.'
-                    },
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            ShoppingList.objects.create(recipe=recipe, user=user)
-            serializer = FavoriteRecipeSerializer(
-                recipe, context={'request': request})
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        elif request.method == 'DELETE':
-            cart_item = ShoppingList.objects.filter(recipe__id=pk, user=user)
-            if cart_item.exists():
-                cart_item.delete()
-                return Response(status=status.HTTP_204_NO_CONTENT)
-            return Response(
-                {'detail': f'Recipe "{recipe.name}" is missing '
-                           'in shopping list.'},
-                status=status.HTTP_400_BAD_REQUEST,
+            serializer = ShoppingListSerializer(data={
+                'user': user.id,
+                'recipe': recipe.id},
+                context={'request': request}
             )
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data,
+                                status=status.HTTP_201_CREATED)
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+        cart_item = get_object_or_404(ShoppingList, user=user, recipe=recipe)
+        cart_item.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @staticmethod
     def shopping_list_to_txt(ingredients):
@@ -232,27 +211,20 @@ class RecipeViewSet(viewsets.ModelViewSet):
         user = request.user
         recipe = get_object_or_404(Recipe, id=pk)
         if request.method == 'POST':
-            if Favorite.objects.filter(recipe=recipe,
-                                       user=user).exists():
-                return Response(
-                    {'detail': f'Recipe "{recipe.name}" was already added '
-                               'to favorites.'},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            Favorite.objects.create(recipe=recipe, user=user)
-            serializer = FavoriteRecipeSerializer(
-                recipe, context={'request': request})
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        elif request.method == 'DELETE':
-            favorite_entry = Favorite.objects.filter(
-                recipe=recipe, user=user)
-            if favorite_entry.exists():
-                favorite_entry.delete()
-                return Response(status=status.HTTP_204_NO_CONTENT)
-            return Response(
-                {'detail': f'Recipe "{recipe.name}" is not in favorites.'},
-                status=status.HTTP_400_BAD_REQUEST,
+            serializer = FavoriteRecipeSerializer(data={
+                'user': user.id,
+                'recipe': recipe.id},
+                context={'request': request}
             )
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data,
+                                status=status.HTTP_201_CREATED)
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+        favorite_item = get_object_or_404(Favorite, user=user, recipe=recipe)
+        favorite_item.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @require_GET
