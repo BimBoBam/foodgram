@@ -2,7 +2,6 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
-
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_extra_fields.fields import Base64ImageField
 
@@ -34,7 +33,7 @@ class SerializerUser(UserSerializer):
     def get_is_subscribed(self, obj):
         request = self.context.get('request')
         return (request and request.user.is_authenticated
-                and request.user.follower.filter(author=obj).exists() or False)
+                and request.user.follower.filter(author=obj).exists())
 
     def validate(self, data):
         user = self.context['request'].user
