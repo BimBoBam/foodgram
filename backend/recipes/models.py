@@ -184,7 +184,7 @@ class Favorite(models.Model):
     )
 
     class Meta:
-        ordering = ['name']
+        ordering = ['user']
         verbose_name = 'Favorite'
         verbose_name_plural = 'Favorites'
 
