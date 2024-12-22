@@ -44,13 +44,6 @@ class SerializerUser(UserSerializer):
             raise ValidationError("You already follow this user.")
         return data
 
-    def to_representation(self, instance):
-        return {
-            'id': instance.id,
-            'user': instance.user.id,
-            'author': instance.author.id,
-        }
-
 
 class SerializerUserCreate(UserCreateSerializer):
     password = serializers.CharField(write_only=True)

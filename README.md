@@ -1,7 +1,7 @@
 ![Main Foodgram workflow](https://github.com/BimBoBam/foodgram/actions/workflows/main.yml/badge.svg)
 
 # Проект Foodgram
-[foodgram](http://verycoolrecipes.zapto.org)
+
 ## Описание проекта
 Foodgram - продуктовый помощник с базой кулинарных рецептов. Позволяет публиковать рецепты, сохранять избранные, а также формировать список покупок для выбранных рецептов. Можно подписываться на любимых авторов.
 
@@ -12,9 +12,6 @@ Foodgram - продуктовый помощник с базой кулинар�
 •	nginx
 •	gunicorn==20.1.0
 •   djoser==2.1.0
-
-## Просмотр документации api
-[api/docs](http://verycoolrecipes.zapto.org)
 
 ### Как запустить проект:
 
@@ -53,13 +50,12 @@ cd infra
 docker compose -f docker-compose.production.yml up
 ```
 
-Выполнить миграции, сбор статики, наполнить базу данных:
+Выполнить миграции, сбор статики:
 
 ```
 docker compose -f docker-compose.production.yml exec backend python manage.py migrate
 docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic
 docker compose -f docker-compose.production.yml exec backend cp -r /app/collected_static/. /backend_static/static/
-sudo docker compose -f docker-compose.production.yml exec backend python manage.py import_data
 ```
 
 ## Автор
