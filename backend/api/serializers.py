@@ -279,7 +279,7 @@ class SubscriberDetailSerializer(serializers.ModelSerializer):
         user = self.context.get('request').user
         return Follow.objects.filter(author=obj.author, user=user).exists()
 
-    def get_recipes(self, obj): 
+    def get_recipes(self, obj):
         request = self.context.get('request')
         limit = request.GET.get('recipes_limit', c.PAGE_SIZE)
         try:
@@ -288,9 +288,10 @@ class SubscriberDetailSerializer(serializers.ModelSerializer):
             pass
         return ShortRecipeSerializer(
             Recipe.objects.filter(author=obj.author)[:limit],
-            many=True, 
+            many=True,
             context={'request': request},
         ).data
+
     def get_recipes_count(self, obj):
         return Recipe.objects.filter(author=obj.author).count()
 

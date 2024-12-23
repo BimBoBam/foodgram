@@ -38,7 +38,7 @@ class Command(BaseCommand):
                         success_count += 1
                     if not created:
                         self.stdout.write(f"Invalid row: {row}")
-                except IntegrityError as err:
-                    print(f'Error in row {row}: {err}')
+                except IndexError as err:
+                    self.stdout.write(f'Error in row {row}: {err}')
         self.stdout.write(f"{success_count} entries were"
                           "imported from .csv file.", ending='')

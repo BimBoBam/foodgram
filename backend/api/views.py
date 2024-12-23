@@ -82,8 +82,8 @@ class ViewSetUser(UserViewSet):
         return self.get_paginated_response(serializer.data)
 
     @action(
-    detail=True,
-    methods=('post', 'delete'),
+        detail=True,
+        methods=('post', 'delete'),
     )
     def subscribe(self, request, id):
         user = request.user
@@ -93,7 +93,7 @@ class ViewSetUser(UserViewSet):
                 {'errors': "You can't (un)subscribe to yourself"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        if request.method == 'POST': 
+        if request.method == 'POST':
             if Follow.objects.filter(user=user, author=author).exists():
                 return Response(
                     {'errors': 'You already follow this user'},
@@ -110,6 +110,7 @@ class ViewSetUser(UserViewSet):
             {'errors': 'You are not subscribed to this user'},
             status=status.HTTP_400_BAD_REQUEST,
         )
+
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (IsAdminAuthorOrReadOnly,)
@@ -205,11 +206,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return HttpResponse(shopping_list, content_type='text/plain')
 
     @action(
-    detail=True,
-    methods=['POST', 'DELETE'],
-    permission_classes=[IsAuthenticated],
-    url_path='favorite',
-    url_name='favorite',
+        detail=True,
+        methods=['POST', 'DELETE'],
+        permission_classes=[IsAuthenticated],
+        url_path='favorite',
+        url_name='favorite',
     )
     def favorite(self, request, pk):
         user = request.user
