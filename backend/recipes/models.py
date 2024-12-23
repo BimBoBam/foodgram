@@ -49,7 +49,7 @@ class Tag(models.Model):
         ), ],
         verbose_name='Tag slug',
         help_text='Tag slug',
-    ) 
+    )
 
     class Meta:
         verbose_name = 'Tag'
