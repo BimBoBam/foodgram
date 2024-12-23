@@ -84,32 +84,24 @@ class ViewSetUser(UserViewSet):
     @action(
         detail=True,
         methods=('post', 'delete'),
-    )
+    )   
     def subscribe(self, request, id):
         user = request.user
         author = get_object_or_404(User, id=id)
-        if user == author:
-            return Response(
-                {'errors': "You can't (un)subscribe to yourself"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        data = {'user': user.id, 'author': author.id}
         if request.method == 'POST':
-            if Follow.objects.filter(user=user, author=author).exists():
-                return Response(
-                    {'errors': 'You already follow this user'},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            queryset = Follow.objects.create(author=author, user=user)
-            serializer = SubscriberSerializer(queryset,
+            serializer = SubscriberSerializer(data=data,
                                               context={'request': request})
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        if Follow.objects.filter(user=user, author=author).exists():
-            Follow.objects.filter(user=user, author=author).delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response(
-            {'errors': 'You are not subscribed to this user'},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+            serializer.is_valid(raise_exception=True)
+            subscription = serializer.save()
+            return Response(
+                SubscriberSerializer(subscription,
+                                     context={'request': request}).data,
+                status=status.HTTP_201_CREATED,
+            )
+        subscription = get_object_or_404(Follow, user=user, author=author)
+        subscription.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):

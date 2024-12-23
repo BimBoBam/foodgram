@@ -308,15 +308,21 @@ class SubscriberSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Follow
-        fields = '__all__'
+        fields = ('user', 'author')
 
-    def to_representation(self, instance):
+    def validate(self, data):
+        user = data['user']
+        author = data['author']
+        if (Follow.objects.filter(user=user, author=author).exists()
+                or user == author):
+            raise serializers.ValidationError()
+        return data
+
+    def create(self, validated_data):
+        return Follow.objects.create(**validated_data)
+
+    def to_representation(self, instance): 
         return SubscriberDetailSerializer(instance, context=self.context).data
-
-    def validate_author(self, value):
-        if self.context['request'].user == value:
-            raise serializers.ValidationError(
-                'You cannot follow yourself')
 
 
 class FavoriteRecipeSerializer(ShortRecipeSerializer):
