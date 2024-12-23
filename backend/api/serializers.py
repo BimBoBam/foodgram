@@ -321,7 +321,7 @@ class SubscriberSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         return Follow.objects.create(**validated_data)
 
-    def to_representation(self, instance): 
+    def to_representation(self, instance):
         return SubscriberDetailSerializer(instance, context=self.context).data
 
 

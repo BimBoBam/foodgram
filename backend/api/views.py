@@ -84,7 +84,7 @@ class ViewSetUser(UserViewSet):
     @action(
         detail=True,
         methods=('post', 'delete'),
-    )   
+    )
     def subscribe(self, request, id):
         user = request.user
         author = get_object_or_404(User, id=id)
