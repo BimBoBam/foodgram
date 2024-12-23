@@ -22,7 +22,7 @@ from api.serializers import (AvatarSerializer, FavoriteRecipeSerializer,
                              IngredientSerializer, RecipeReadSerializer,
                              RecipeWriteSerializer, SerializerUser,
                              ShoppingListSerializer,
-                             SubscriberDetailSerializer,
+                             SubscriberDetailSerializer, SubscriberSerializer,
                              TagSerializer)
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                             ShoppingList, Tag)
@@ -81,32 +81,35 @@ class ViewSetUser(UserViewSet):
         )
         return self.get_paginated_response(serializer.data)
 
-    @action(detail=False, methods=('post', 'delete'))
+    @action(
+    detail=True,
+    methods=('post', 'delete'),
+    )
     def subscribe(self, request, id):
         user = request.user
         author = get_object_or_404(User, id=id)
-        data = {'user': user.id, 'author': author.id}
-        if request.method == 'POST':
-            serializer = SerializerUser(data=data,
-                                        context={'request': request})
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data,
-                                status=status.HTTP_201_CREATED)
-            return Response(serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
-        serializer = SerializerUser(data=data, context={'request': request})
-        if serializer.is_valid():
-            subscription = Follow.objects.filter(
-                user=user, author=author).first()
-            if subscription:
-                subscription.delete()
-                return Response(status=status.HTTP_204_NO_CONTENT)
+        if user == author:
             return Response(
-                {'errors': 'You are not subscribed to this user'},
-                status=status.HTTP_400_BAD_REQUEST
+                {'errors': "You can't (un)subscribe to yourself"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
-
+        if request.method == 'POST': 
+            if Follow.objects.filter(user=user, author=author).exists():
+                return Response(
+                    {'errors': 'You already follow this user'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            queryset = Follow.objects.create(author=author, user=user)
+            serializer = SubscriberSerializer(queryset,
+                                              context={'request': request})
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        if Follow.objects.filter(user=user, author=author).exists():
+            Follow.objects.filter(user=user, author=author).delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(
+            {'errors': 'You are not subscribed to this user'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (IsAdminAuthorOrReadOnly,)
@@ -202,30 +205,35 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return HttpResponse(shopping_list, content_type='text/plain')
 
     @action(
-        detail=True,
-        methods=['POST', 'DELETE'],
-        permission_classes=[IsAuthenticated],
-        url_path='favorite',
-        url_name='favorite',
+    detail=True,
+    methods=['POST', 'DELETE'],
+    permission_classes=[IsAuthenticated],
+    url_path='favorite',
+    url_name='favorite',
     )
     def favorite(self, request, pk):
         user = request.user
         recipe = get_object_or_404(Recipe, id=pk)
+
         if request.method == 'POST':
-            serializer = FavoriteRecipeSerializer(data={
-                'user': user.id,
-                'recipe': recipe.id},
-                context={'request': request}
-            )
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data,
-                                status=status.HTTP_201_CREATED)
-            return Response(serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
-        favorite_item = get_object_or_404(Favorite, user=user, recipe=recipe)
-        favorite_item.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+            if Favorite.objects.filter(recipe=recipe, user=user).exists():
+                return Response(
+                    {'detail': f'Recipe "{recipe.name}" was already added '
+                        'to favorites.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            Favorite.objects.create(recipe=recipe, user=user)
+            serializer = FavoriteRecipeSerializer(
+                recipe, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        favorite_entry = Favorite.objects.filter(recipe=recipe, user=user)
+        if favorite_entry.exists():
+            favorite_entry.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(
+            {'detail': f'Recipe "{recipe.name}" is not in favorites.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
 
 @require_GET

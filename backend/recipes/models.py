@@ -1,4 +1,4 @@
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
 
 from foodgram import constants as c
@@ -19,7 +19,7 @@ class Ingredient(models.Model):
     )
 
     class Meta:
-        ordering = ['name']
+        ordering = ['-id']
         verbose_name = 'Ingredient'
         verbose_name_plural = 'Ingredients'
         constraints = (
@@ -42,12 +42,16 @@ class Tag(models.Model):
     slug = models.SlugField(
         max_length=c.TAG_SLUG_MAX_LENGTH,
         unique=True,
+        validators=[RegexValidator(
+            regex=r'^[-a-zA-Z0-9_]+$',
+            message='Slug contains restricted symbols. Please use only '
+                    'letters, numbers and _ symbol',
+        ), ],
         verbose_name='Tag slug',
         help_text='Tag slug',
     )
 
     class Meta:
-        ordering = ['name']
         verbose_name = 'Tag'
         verbose_name_plural = 'Tags'
 
@@ -67,6 +71,7 @@ class Recipe(models.Model):
     )
     ingredients = models.ManyToManyField(
         Ingredient,
+        blank=False,
         through='RecipeIngredient',
         related_name='recipes',
         verbose_name='Recipe ingredients',
@@ -81,7 +86,7 @@ class Recipe(models.Model):
         help_text='Cooking time in minutes',
     )
     image = models.ImageField(
-        blank=False,
+        blank=True,
         verbose_name='Recipe image',
         help_text='Recipe image',
         upload_to='media/recipes/',
@@ -102,7 +107,7 @@ class Recipe(models.Model):
     )
 
     class Meta:
-        ordering = ['name']
+        ordering = ('-id',)
         verbose_name = 'Recipe'
         verbose_name_plural = 'Recipes'
 
@@ -114,13 +119,13 @@ class RecipeIngredient(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='ingredient_lists',
+        related_name='ingredient_list',
         verbose_name='Recipe'
     )
     ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
-        related_name='ingredient_recipes',
+        related_name='ingredient_recipe',
         verbose_name='Ingredient'
     )
     amount = models.PositiveSmallIntegerField(
@@ -132,7 +137,7 @@ class RecipeIngredient(models.Model):
     )
 
     class Meta:
-        ordering = ['recipe']
+        ordering = ['-id']
         verbose_name = 'Ingredient amount'
         verbose_name_plural = 'Ingredient amounts'
         constraints = (
@@ -150,18 +155,18 @@ class RecipeTags(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='tags_list',
+        related_name='tag_list',
         verbose_name='Recipe'
     )
     tag = models.ForeignKey(
         Tag,
         on_delete=models.CASCADE,
-        related_name='tags_recipe',
+        related_name='tag_recipe',
         verbose_name='Tag'
     )
 
     class Meta:
-        ordering = ['recipe']
+        ordering = ('-id',)
         verbose_name = 'Recipe tag'
         verbose_name_plural = 'Recipe tags'
 
@@ -173,18 +178,18 @@ class Favorite(models.Model):
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='favorites',
+        related_name='favorite',
         verbose_name='Favorite user',
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='favorites',
+        related_name='favorite',
         verbose_name='Favorite recipe',
     )
 
     class Meta:
-        ordering = ['user']
+        ordering = ['-id']
         verbose_name = 'Favorite'
         verbose_name_plural = 'Favorites'
 

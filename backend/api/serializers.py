@@ -250,7 +250,7 @@ class ShortRecipeSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'image', 'cooking_time')
 
 
-class SubscriberDetailSerializer(SerializerUser):
+class SubscriberDetailSerializer(serializers.ModelSerializer):
     email = serializers.ReadOnlyField(source='author.email')
     id = serializers.ReadOnlyField(source='author.id')
     username = serializers.ReadOnlyField(source='author.username')
@@ -262,43 +262,52 @@ class SubscriberDetailSerializer(SerializerUser):
     avatar = Base64ImageField(source='author.avatar')
 
     class Meta:
-        model = User
-        fields = SerializerUser.Meta.fields + (
+        model = Follow
+        fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'is_subscribed',
             'recipes',
             'recipes_count',
+            'avatar',
         )
 
-    def get_recipes(self, obj):
+    def get_is_subscribed(self, obj):
+        user = self.context.get('request').user
+        return Follow.objects.filter(author=obj.author, user=user).exists()
+
+    def get_recipes(self, obj): 
         request = self.context.get('request')
         limit = request.GET.get('recipes_limit', c.PAGE_SIZE)
-        if limit.isdigit():
+        try:
             limit = int(limit)
-        else:
-            limit = c.PAGE_SIZE
+        except ValueError:
+            pass
         return ShortRecipeSerializer(
-            obj.recipes.all()[:limit],
-            many=True,
+            Recipe.objects.filter(author=obj.author)[:limit],
+            many=True, 
             context={'request': request},
         ).data
-
     def get_recipes_count(self, obj):
-        return obj.recipes.count()
+        return Recipe.objects.filter(author=obj.author).count()
 
 
 class SubscriberSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Follow
-        fields = 'author'
+        fields = '__all__'
 
-    def to_representation(self, instance):
+    def to_representation(self, instance): 
         return SubscriberDetailSerializer(instance, context=self.context).data
 
     def validate_author(self, value):
         if self.context['request'].user == value:
             raise serializers.ValidationError(
                 'You cannot follow yourself')
-        return value
 
 
 class FavoriteRecipeSerializer(ShortRecipeSerializer):
@@ -312,13 +321,6 @@ class FavoriteRecipeSerializer(ShortRecipeSerializer):
                 f'Recipe "{recipe.name}" is already in favorites.'
             )
         return data
-
-    def to_representation(self, instance):
-        return {
-            'id': instance.id,
-            'user': instance.user.username,
-            'recipe': instance.recipe.id,
-        }
 
 
 class ShoppingListSerializer(serializers.ModelSerializer):
@@ -335,10 +337,3 @@ class ShoppingListSerializer(serializers.ModelSerializer):
                 f'Recipe "{recipe.name}" is already in the shopping list.'
             )
         return data
-
-    def to_representation(self, instance):
-        return {
-            'id': instance.id,
-            'user': instance.user.username,
-            'recipe': instance.recipe.id,
-        }
