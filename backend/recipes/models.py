@@ -19,7 +19,7 @@ class Ingredient(models.Model):
     )
 
     class Meta:
-        ordering = ['-id']
+        ordering = ['name']
         verbose_name = 'Ingredient'
         verbose_name_plural = 'Ingredients'
         constraints = (
@@ -49,11 +49,12 @@ class Tag(models.Model):
         ), ],
         verbose_name='Tag slug',
         help_text='Tag slug',
-    )
+    ) 
 
     class Meta:
         verbose_name = 'Tag'
         verbose_name_plural = 'Tags'
+        ordering = ['name']
 
     def __str__(self):
         return self.name
@@ -71,7 +72,6 @@ class Recipe(models.Model):
     )
     ingredients = models.ManyToManyField(
         Ingredient,
-        blank=False,
         through='RecipeIngredient',
         related_name='recipes',
         verbose_name='Recipe ingredients',
@@ -86,7 +86,6 @@ class Recipe(models.Model):
         help_text='Cooking time in minutes',
     )
     image = models.ImageField(
-        blank=True,
         verbose_name='Recipe image',
         help_text='Recipe image',
         upload_to='media/recipes/',
@@ -119,13 +118,13 @@ class RecipeIngredient(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='ingredient_list',
+        related_name='ingredient_lists',
         verbose_name='Recipe'
     )
     ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
-        related_name='ingredient_recipe',
+        related_name='ingredient_recipes',
         verbose_name='Ingredient'
     )
     amount = models.PositiveSmallIntegerField(
@@ -137,7 +136,7 @@ class RecipeIngredient(models.Model):
     )
 
     class Meta:
-        ordering = ['-id']
+        ordering = ['recipe']
         verbose_name = 'Ingredient amount'
         verbose_name_plural = 'Ingredient amounts'
         constraints = (
@@ -155,18 +154,18 @@ class RecipeTags(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='tag_list',
+        related_name='tags_lists',
         verbose_name='Recipe'
     )
     tag = models.ForeignKey(
         Tag,
         on_delete=models.CASCADE,
-        related_name='tag_recipe',
+        related_name='tags_recipes',
         verbose_name='Tag'
     )
 
     class Meta:
-        ordering = ('-id',)
+        ordering = ('tag',)
         verbose_name = 'Recipe tag'
         verbose_name_plural = 'Recipe tags'
 
@@ -189,7 +188,7 @@ class Favorite(models.Model):
     )
 
     class Meta:
-        ordering = ['-id']
+        ordering = ['user']
         verbose_name = 'Favorite'
         verbose_name_plural = 'Favorites'
 
@@ -221,7 +220,6 @@ class ShoppingList(models.Model):
     class Meta:
         verbose_name = "Shopping list"
         verbose_name_plural = "Shopping lists"
-
         constraints = (
             models.UniqueConstraint(
                 fields=('user', 'recipe'),

@@ -116,7 +116,7 @@ class RecipeReadSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True)
     author = SerializerUser()
     ingredients = RecipeIngredientSerializer(
-        source='ingredient_list',
+        source='ingredient_lists',
         many=True
     )
     is_favorited = serializers.SerializerMethodField()
@@ -227,6 +227,9 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         RecipeIngredient.objects.bulk_create(recipe_ingredients)
 
     def create(self, validated_data):
+        image = validated_data.get('image')
+        if image is None:
+            raise serializers.ValidationError()
         ingredients = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
         user = self.context.get('request').user
@@ -236,6 +239,11 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         return recipe
 
     def update(self, instance, validated_data):
+        tags = validated_data.get('tags')
+        ingredients = validated_data.get('ingredients')
+        image = validated_data.get('image')
+        if tags is None or ingredients is None or image is None:
+            raise serializers.ValidationError()
         RecipeTags.objects.filter(recipe=instance).delete()
         RecipeIngredient.objects.filter(recipe=instance).delete()
         self.create_tags(validated_data.pop('tags'), instance)
