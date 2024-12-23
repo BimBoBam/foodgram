@@ -20,7 +20,6 @@ class Command(BaseCommand):
         self.stdout.write("Loading data...", ending='')
         Ingredient.objects.all().delete()
         self.stdout.write('Database cleared.')
-        ingredients = []
         with open(path, 'r', encoding='utf-8') as csv_file:
             reader = csv.reader(csv_file)
             total_lines = sum(1 for _ in open(path, 'r', encoding='utf-8'))
@@ -31,14 +30,15 @@ class Command(BaseCommand):
                 name_csv = 0
                 unit_csv = 1
                 try:
-                    ingredients.append(Ingredient(
+                    obj, created = Ingredient.objects.get_or_create(
                         name=row[name_csv],
-                        measurement_unit=row[unit_csv]
-                    ))
-                    success_count += 1
-                except IndexError:
-                    self.stdout.write(f"Invalid row: {row}")
-
-        Ingredient.objects.bulk_create(ingredients)
+                        measurement_unit=row[unit_csv],
+                    )
+                    if created:
+                        success_count += 1
+                    if not created:
+                        self.stdout.write(f"Invalid row: {row}")
+                except IntegrityError as err:
+                    print(f'Error in row {row}: {err}')
         self.stdout.write(f"{success_count} entries were"
                           "imported from .csv file.", ending='')
