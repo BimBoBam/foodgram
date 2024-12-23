@@ -302,7 +302,7 @@ class SubscriberSerializer(serializers.ModelSerializer):
         model = Follow
         fields = '__all__'
 
-    def to_representation(self, instance): 
+    def to_representation(self, instance):
         return SubscriberDetailSerializer(instance, context=self.context).data
 
     def validate_author(self, value):
