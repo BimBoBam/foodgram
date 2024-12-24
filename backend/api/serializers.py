@@ -99,16 +99,17 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
             'amount'
         )
 
-    def validate_id(self, value):
-        return get_object_or_404(Ingredient, id=value)
-
 
 class RecipeIngredientWriteSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField()
 
     class Meta:
         model = RecipeIngredient
-        fields = ('id', 'amount')
+        fields = ('id', 'amount',)
+
+    def validate_id(self, value):
+        get_object_or_404(Ingredient, id=value)
+        return value
 
 
 class RecipeReadSerializer(serializers.ModelSerializer):
@@ -116,7 +117,7 @@ class RecipeReadSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True)
     author = SerializerUser()
     ingredients = RecipeIngredientSerializer(
-        source='ingredient_lists',
+        source='recipe_ingredients',
         many=True
     )
     is_favorited = serializers.SerializerMethodField()
@@ -160,11 +161,10 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         label='Tags',
     )
     ingredients = RecipeIngredientWriteSerializer(
-        many=True,
         label='Ingredients',
+        many=True,
     )
     image = Base64ImageField(
-        allow_null=True,
         label='images'
     )
 
@@ -189,20 +189,13 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
 
         return value
 
-    def validate_ingredients(self, value):
+    def validate(self, value):
         if not value:
             raise serializers.ValidationError(
                 'Please add ingredient'
             )
-        ingredient_ids = [ingredient['id'] for ingredient in value]
-        existing_ingredients = Ingredient.objects.filter(id__in=ingredient_ids)
-        if len(existing_ingredients) != len(ingredient_ids):
-            missing_ids = set(ingredient_ids) - set(
-                existing_ingredients.values_list('id', flat=True)
-            )
-            raise serializers.ValidationError(
-                f'Ingredients with id {missing_ids} do not exist'
-            )
+        if len(value) != len(set(value)):
+            raise serializers.ValidationError('')
         return value
 
     def to_representation(self, instance):
@@ -227,8 +220,10 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         RecipeIngredient.objects.bulk_create(recipe_ingredients)
 
     def create(self, validated_data):
+        tags = validated_data.get('tags')
+        ingredients = validated_data.get('ingredients')
         image = validated_data.get('image')
-        if image is None:
+        if tags is None or ingredients is None or image is None:
             raise serializers.ValidationError()
         ingredients = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
@@ -258,7 +253,7 @@ class ShortRecipeSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'image', 'cooking_time')
 
 
-class SubscriberDetailSerializer(serializers.ModelSerializer):
+class SubscriberDetailSerializer(SerializerUser):
     email = serializers.ReadOnlyField(source='author.email')
     id = serializers.ReadOnlyField(source='author.id')
     username = serializers.ReadOnlyField(source='author.username')
@@ -270,38 +265,30 @@ class SubscriberDetailSerializer(serializers.ModelSerializer):
     avatar = Base64ImageField(source='author.avatar')
 
     class Meta:
-        model = Follow
-        fields = (
-            'email',
-            'id',
-            'username',
-            'first_name',
-            'last_name',
-            'is_subscribed',
+        model = User
+        fields = SerializerUser.Meta.fields + (
             'recipes',
             'recipes_count',
-            'avatar',
         )
-
-    def get_is_subscribed(self, obj):
-        user = self.context.get('request').user
-        return Follow.objects.filter(author=obj.author, user=user).exists()
 
     def get_recipes(self, obj):
         request = self.context.get('request')
         limit = request.GET.get('recipes_limit', c.PAGE_SIZE)
-        try:
+        recipes = obj.author.recipes.all()
+        if str(limit).isdigit() and limit is not None:
             limit = int(limit)
-        except ValueError:
-            pass
-        return ShortRecipeSerializer(
-            Recipe.objects.filter(author=obj.author)[:limit],
-            many=True,
-            context={'request': request},
-        ).data
+            return ShortRecipeSerializer(
+                recipes[:limit],
+                many=True,
+                context={'request': request},
+            ).data
 
     def get_recipes_count(self, obj):
-        return Recipe.objects.filter(author=obj.author).count()
+        return obj.author.recipes.count()
+
+    def get_is_subscribed(self, obj):
+        user = self.context.get('request').user
+        return Follow.objects.filter(author=obj.author, user=user).exists()
 
 
 class SubscriberSerializer(serializers.ModelSerializer):
@@ -325,8 +312,10 @@ class SubscriberSerializer(serializers.ModelSerializer):
         return SubscriberDetailSerializer(instance, context=self.context).data
 
 
-class FavoriteRecipeSerializer(ShortRecipeSerializer):
-    image = Base64ImageField()
+class FavoriteRecipeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Favorite
+        fields = ('user', 'recipe',)
 
     def validate(self, data):
         user = self.context['request'].user

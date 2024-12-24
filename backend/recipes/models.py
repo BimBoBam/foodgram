@@ -42,11 +42,6 @@ class Tag(models.Model):
     slug = models.SlugField(
         max_length=c.TAG_SLUG_MAX_LENGTH,
         unique=True,
-        validators=[RegexValidator(
-            regex=r'^[-a-zA-Z0-9_]+$',
-            message='Slug contains restricted symbols. Please use only '
-                    'letters, numbers and _ symbol',
-        ), ],
         verbose_name='Tag slug',
         help_text='Tag slug',
     )
@@ -106,7 +101,7 @@ class Recipe(models.Model):
     )
 
     class Meta:
-        ordering = ('-id',)
+        ordering = ('-name',)
         verbose_name = 'Recipe'
         verbose_name_plural = 'Recipes'
 
@@ -118,13 +113,11 @@ class RecipeIngredient(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='ingredient_lists',
         verbose_name='Recipe'
     )
     ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
-        related_name='ingredient_recipes',
         verbose_name='Ingredient'
     )
     amount = models.PositiveSmallIntegerField(
@@ -139,6 +132,7 @@ class RecipeIngredient(models.Model):
         ordering = ['recipe']
         verbose_name = 'Ingredient amount'
         verbose_name_plural = 'Ingredient amounts'
+        default_related_name = 'recipe_ingredients'
         constraints = (
             models.UniqueConstraint(
                 fields=('ingredient', 'recipe'),
@@ -154,13 +148,11 @@ class RecipeTags(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='tags_lists',
         verbose_name='Recipe'
     )
     tag = models.ForeignKey(
         Tag,
         on_delete=models.CASCADE,
-        related_name='tags_recipes',
         verbose_name='Tag'
     )
 
@@ -168,6 +160,7 @@ class RecipeTags(models.Model):
         ordering = ('tag',)
         verbose_name = 'Recipe tag'
         verbose_name_plural = 'Recipe tags'
+        default_related_name = 'recipe_tags'
 
     def __str__(self):
         return f'Recipe {self.recipe} has tag {self.tag}'
@@ -177,13 +170,13 @@ class Favorite(models.Model):
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='favorite',
+        related_name='favorites',
         verbose_name='Favorite user',
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='favorite',
+        related_name='favorites',
         verbose_name='Favorite recipe',
     )
 
@@ -207,17 +200,18 @@ class ShoppingList(models.Model):
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='shopping_list',
+        related_name='shopping_lists',
         verbose_name='User',
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='shopping_list',
+        related_name='shopping_lists',
         verbose_name='Recipe',
     )
 
     class Meta:
+        ordering = ['user']
         verbose_name = "Shopping list"
         verbose_name_plural = "Shopping lists"
         constraints = (

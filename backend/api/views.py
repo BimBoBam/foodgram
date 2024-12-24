@@ -1,11 +1,11 @@
 from django.core.exceptions import ValidationError
-from django.db.models import Sum
+from django.db.models import Sum 
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.http import require_GET
 
 from django.contrib.auth import get_user_model
-from rest_framework import status, viewsets
+from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import (AllowAny, IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
@@ -99,7 +99,9 @@ class ViewSetUser(UserViewSet):
                                      context={'request': request}).data,
                 status=status.HTTP_201_CREATED,
             )
-        subscription = get_object_or_404(Follow, user=user, author=author)
+        subscription = Follow.objects.filter(user=user, author=author)
+        if not subscription.exists():
+            raise serializers.ValidationError()
         subscription.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -162,13 +164,15 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 'recipe': recipe.id},
                 context={'request': request}
             )
-            if serializer.is_valid():
+            if serializer.is_valid(raise_exception=True):
                 serializer.save()
                 return Response(serializer.data,
                                 status=status.HTTP_201_CREATED)
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
-        cart_item = get_object_or_404(ShoppingList, user=user, recipe=recipe)
+        cart_item = ShoppingList.objects.filter(user=user, recipe=recipe)
+        if not cart_item.exists():
+            raise serializers.ValidationError()
         cart_item.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -190,7 +194,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def download_shopping_cart(self, request):
         ingredients = (
             RecipeIngredient.objects.filter(
-                recipe__shopping_list__user=request.user)
+                recipe__shopping_lists__user=request.user)
             .values('ingredient__name', 'ingredient__measurement_unit')
             .annotate(sum=Sum('amount'))
         )
@@ -207,26 +211,23 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def favorite(self, request, pk):
         user = request.user
         recipe = get_object_or_404(Recipe, id=pk)
-
         if request.method == 'POST':
-            if Favorite.objects.filter(recipe=recipe, user=user).exists():
-                return Response(
-                    {'detail': f'Recipe "{recipe.name}" was already added '
-                        'to favorites.'},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            Favorite.objects.create(recipe=recipe, user=user)
-            serializer = FavoriteRecipeSerializer(
-                recipe, context={'request': request})
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        favorite_entry = Favorite.objects.filter(recipe=recipe, user=user)
-        if favorite_entry.exists():
-            favorite_entry.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response(
-            {'detail': f'Recipe "{recipe.name}" is not in favorites.'},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+            serializer = FavoriteRecipeSerializer(data={
+                'user': user.id,
+                'recipe': recipe.id},
+                context={'request': request}
+            )
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                return Response(serializer.data,
+                                status=status.HTTP_201_CREATED)
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+        favorite_entry = Favorite.objects.filter(user=user, recipe=recipe)
+        if not favorite_entry.exists():
+            raise serializers.ValidationError()
+        favorite_entry.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @require_GET
