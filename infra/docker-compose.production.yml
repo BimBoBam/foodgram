@@ -37,7 +37,7 @@ services:
     image: bimbobam/foodgram_gateway:latest
     restart: always
     ports:
-      - "8000:80"
+      - "9090:80"
     volumes:
       - redoc:/usr/share/nginx/html/api/docs/
       - static:/staticfiles/
