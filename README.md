@@ -1,7 +1,7 @@
 ![Main Foodgram workflow](https://github.com/BimBoBam/foodgram/actions/workflows/main.yml/badge.svg)
 
 # Проект Foodgram
-[Foodgram]('https://verycoolrecipes.zapto.org'
+[Foodgram](https://verycoolrecipes.zapto.org)
 [Ссылка на api/docs](https://verycoolrecipes.zapto.org/api/docs)
 ## Описание проекта
 Foodgram - продуктовый помощник с базой кулинарных рецептов. Позволяет публиковать рецепты, сохранять избранные, а также формировать список покупок для выбранных рецептов. Можно подписываться на любимых авторов.
