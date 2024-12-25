@@ -182,7 +182,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
     def validate(self, value):
         if 'ingredients' in value and 'tags' in value:
             if (not value['ingredients'] or not value['tags']
-                or not value['image']):
+                    or not value['image']):
                 raise serializers.ValidationError()
             ids = {ingredient['id'] for ingredient in value['ingredients']}
             tags = {tag for tag in value['tags']}
