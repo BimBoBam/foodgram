@@ -1,19 +1,17 @@
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.http import require_GET
-
-from django.contrib.auth import get_user_model
+from django_filters.rest_framework import DjangoFilterBackend
+from djoser.views import UserViewSet
 from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import (AllowAny, IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
-from djoser.views import UserViewSet
-
-from django_filters.rest_framework import DjangoFilterBackend
 
 from api.filters import IngredientFilter, RecipeFilter
 from api.pagination import LimitPagination
@@ -72,7 +70,7 @@ class ViewSetUser(UserViewSet):
     )
     def subscriptions(self, request):
         user = request.user
-        queryset = user.follower.all()
+        queryset = queryset = user.follower.all()
         pages = self.paginate_queryset(queryset)
         serializer = SubscriberDetailSerializer(
             pages,
@@ -95,8 +93,7 @@ class ViewSetUser(UserViewSet):
             serializer.is_valid(raise_exception=True)
             subscription = serializer.save()
             return Response(
-                SubscriberSerializer(subscription,
-                                     context={'request': request}).data,
+                serializer.data,
                 status=status.HTTP_201_CREATED,
             )
         subscription = Follow.objects.filter(user=user, author=author)
@@ -120,6 +117,29 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = IngredientFilter
     search_fields = ('^name',)
+
+
+class shop_and_fav():
+    @staticmethod
+    def for_post(request, w_ser, pk):
+        user = request.user
+        recipe = get_object_or_404(Recipe, id=pk)
+        serializer = w_ser(data={
+            'user': user.id,
+            'recipe': recipe.id},
+            context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return serializer.data
+
+    @staticmethod
+    def for_del(request, w_mod, pk):
+        user = request.user
+        recipe = get_object_or_404(Recipe, id=pk)
+        entry = w_mod.objects.filter(user=user, recipe=recipe)
+        if not entry.exists():
+            raise serializers.ValidationError()
+        entry.delete()
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -155,25 +175,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
         url_name='shopping_cart',
     )
     def shopping_cart(self, request, pk):
-        user = request.user
-        recipe = get_object_or_404(Recipe, id=pk)
-
         if request.method == 'POST':
-            serializer = ShoppingListSerializer(data={
-                'user': user.id,
-                'recipe': recipe.id},
-                context={'request': request}
-            )
-            if serializer.is_valid(raise_exception=True):
-                serializer.save()
-                return Response(serializer.data,
-                                status=status.HTTP_201_CREATED)
-            return Response(serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
-        cart_item = ShoppingList.objects.filter(user=user, recipe=recipe)
-        if not cart_item.exists():
-            raise serializers.ValidationError()
-        cart_item.delete()
+            return Response(shop_and_fav.for_post(request,
+                                                  ShoppingListSerializer,
+                                                  pk),
+                            status=status.HTTP_201_CREATED)
+        shop_and_fav.for_del(request, ShoppingList, pk)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @staticmethod
@@ -209,24 +216,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
         url_name='favorite',
     )
     def favorite(self, request, pk):
-        user = request.user
-        recipe = get_object_or_404(Recipe, id=pk)
         if request.method == 'POST':
-            serializer = FavoriteRecipeSerializer(data={
-                'user': user.id,
-                'recipe': recipe.id},
-                context={'request': request}
-            )
-            if serializer.is_valid(raise_exception=True):
-                serializer.save()
-                return Response(serializer.data,
-                                status=status.HTTP_201_CREATED)
-            return Response(serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
-        favorite_entry = Favorite.objects.filter(user=user, recipe=recipe)
-        if not favorite_entry.exists():
-            raise serializers.ValidationError()
-        favorite_entry.delete()
+            return Response(shop_and_fav.for_post(request,
+                                                  FavoriteRecipeSerializer,
+                                                  pk),
+                            status=status.HTTP_201_CREATED)
+        shop_and_fav.for_del(request, Favorite, pk)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

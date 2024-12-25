@@ -1,9 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.shortcuts import get_object_or_404
-from rest_framework import serializers
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_extra_fields.fields import Base64ImageField
+from rest_framework import serializers
 
 from foodgram import constants as c
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
@@ -108,8 +107,9 @@ class RecipeIngredientWriteSerializer(serializers.ModelSerializer):
         fields = ('id', 'amount',)
 
     def validate_id(self, value):
-        get_object_or_404(Ingredient, id=value)
-        return value
+        if Ingredient.objects.filter(id=value).exists():
+            return value
+        raise serializers.ValidationError()
 
 
 class RecipeReadSerializer(serializers.ModelSerializer):
@@ -189,12 +189,14 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
 
         return value
 
-    def validate(self, value):
+#поменял название с validate кол-во ошибок уменьшилось, новых нет
+    def validate_ingredients(self, value):
         if not value:
             raise serializers.ValidationError(
                 'Please add ingredient'
             )
-        if len(value) != len(set(value)):
+        ids = {ingredient['id'] for ingredient in value}
+        if len(value) != len(ids):
             raise serializers.ValidationError('')
         return value
 
@@ -250,7 +252,7 @@ class ShortRecipeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Recipe
-        fields = ('id', 'name', 'image', 'cooking_time')
+        fields = ('id', 'name', 'image', 'cooking_time',)
 
 
 class SubscriberDetailSerializer(SerializerUser):
@@ -271,7 +273,7 @@ class SubscriberDetailSerializer(SerializerUser):
             'recipes_count',
         )
 
-    def get_recipes(self, obj):
+    def get_recipes(self, obj): 
         request = self.context.get('request')
         limit = request.GET.get('recipes_limit', c.PAGE_SIZE)
         recipes = obj.author.recipes.all()
@@ -312,10 +314,21 @@ class SubscriberSerializer(serializers.ModelSerializer):
         return SubscriberDetailSerializer(instance, context=self.context).data
 
 
+class ShopFavSerializer(serializers.ModelSerializer):
+    cooking_time = serializers.ReadOnlyField(source='recipe.cooking_time')
+    id = serializers.ReadOnlyField(source='recipe.id')
+    name = serializers.ReadOnlyField(source='recipe.name')
+    image = Base64ImageField(source='recipe.image')
+
+    class Meta:
+        model = Favorite
+        fields = ('user', 'recipe', 'id', 'name', 'image', 'cooking_time',)
+
+
 class FavoriteRecipeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Favorite
-        fields = ('user', 'recipe',)
+        fields = ('user', 'recipe')
 
     def validate(self, data):
         user = self.context['request'].user
@@ -325,6 +338,9 @@ class FavoriteRecipeSerializer(serializers.ModelSerializer):
                 f'Recipe "{recipe.name}" is already in favorites.'
             )
         return data
+
+    def to_representation(self, instance):
+        return ShopFavSerializer(instance, context=self.context).data
 
 
 class ShoppingListSerializer(serializers.ModelSerializer):
@@ -341,3 +357,6 @@ class ShoppingListSerializer(serializers.ModelSerializer):
                 f'Recipe "{recipe.name}" is already in the shopping list.'
             )
         return data
+
+    def to_representation(self, instance):
+        return ShopFavSerializer(instance, context=self.context).data
