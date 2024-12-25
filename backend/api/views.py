@@ -130,7 +130,9 @@ class shop_and_fav():
             context={'request': request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return serializer.data
+        data = serializer.data
+        return {'id': data['id'], 'name': data['name'],
+                'image': data['image'], 'cooking_time': data['cooking_time']}
 
     @staticmethod
     def for_del(request, w_mod, pk):
