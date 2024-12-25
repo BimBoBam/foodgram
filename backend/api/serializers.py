@@ -287,7 +287,8 @@ class SubscriberSerializer(serializers.ModelSerializer):
         return Follow.objects.create(**validated_data)
 
     def to_representation(self, instance):
-        return SubscriberDetailSerializer(instance.user, context=self.context).data
+        return SubscriberDetailSerializer(instance.user,
+                                          context=self.context).data
 
 
 class ShopFavSerializer(serializers.ModelSerializer):
