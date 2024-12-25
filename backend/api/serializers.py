@@ -189,7 +189,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
 
         return value
 
-#поменял название с validate кол-во ошибок уменьшилось, новых нет
+# поменял название с validate кол-во ошибок уменьшилось, новых нет
     def validate_ingredients(self, value):
         if not value:
             raise serializers.ValidationError(
@@ -273,7 +273,7 @@ class SubscriberDetailSerializer(SerializerUser):
             'recipes_count',
         )
 
-    def get_recipes(self, obj): 
+    def get_recipes(self, obj):
         request = self.context.get('request')
         limit = request.GET.get('recipes_limit', c.PAGE_SIZE)
         recipes = obj.author.recipes.all()
