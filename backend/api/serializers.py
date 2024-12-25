@@ -181,7 +181,8 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
 
     def validate(self, value):
         if 'ingredients' in value and 'tags' in value:
-            if not value['ingredients'] or not value['tags']:
+            if (not value['ingredients'] or not value['tags']
+                or not value['image']):
                 raise serializers.ValidationError()
             ids = {ingredient['id'] for ingredient in value['ingredients']}
             tags = {tag for tag in value['tags']}
@@ -213,9 +214,6 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         RecipeIngredient.objects.bulk_create(recipe_ingredients)
 
     def create(self, validated_data):
-        image = validated_data.get('image')
-        if image is None:
-            raise serializers.ValidationError()
         ingredients = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
         user = self.context.get('request').user
@@ -225,9 +223,6 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         return recipe
 
     def update(self, instance, validated_data):
-        image = validated_data.get('image')
-        if image is None:
-            raise serializers.ValidationError()
         RecipeTags.objects.filter(recipe=instance).delete()
         RecipeIngredient.objects.filter(recipe=instance).delete()
         self.create_tags(validated_data.pop('tags'), instance)
