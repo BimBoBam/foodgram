@@ -70,7 +70,7 @@ class ViewSetUser(UserViewSet):
     )
     def subscriptions(self, request):
         user = request.user
-        queryset = queryset = user.follower.all()
+        queryset = User.objects.filter(following__user=user)
         pages = self.paginate_queryset(queryset)
         serializer = SubscriberDetailSerializer(
             pages,
@@ -119,7 +119,18 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     search_fields = ('^name',)
 
 
-class shop_and_fav():
+class RecipeViewSet(viewsets.ModelViewSet):
+    permission_classes = (IsAdminAuthorOrReadOnly,)
+    queryset = Recipe.objects.all()
+    pagination_class = LimitPagination
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = RecipeFilter
+
+    def get_serializer_class(self):
+        if self.action in ('list', 'retrieve', 'get-link'):
+            return RecipeReadSerializer
+        return RecipeWriteSerializer
+
     @staticmethod
     def for_post(request, w_ser, pk):
         user = request.user
@@ -143,19 +154,6 @@ class shop_and_fav():
             raise serializers.ValidationError()
         entry.delete()
 
-
-class RecipeViewSet(viewsets.ModelViewSet):
-    permission_classes = (IsAdminAuthorOrReadOnly,)
-    queryset = Recipe.objects.all()
-    pagination_class = LimitPagination
-    filter_backends = (DjangoFilterBackend,)
-    filterset_class = RecipeFilter
-
-    def get_serializer_class(self):
-        if self.action in ('list', 'retrieve', 'get-link'):
-            return RecipeReadSerializer
-        return RecipeWriteSerializer
-
     @action(
         detail=True,
         methods=['GET'],
@@ -178,11 +176,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
     )
     def shopping_cart(self, request, pk):
         if request.method == 'POST':
-            return Response(shop_and_fav.for_post(request,
-                                                  ShoppingListSerializer,
-                                                  pk),
+            return Response(RecipeViewSet.for_post(request,
+                                                   ShoppingListSerializer,
+                                                   pk),
                             status=status.HTTP_201_CREATED)
-        shop_and_fav.for_del(request, ShoppingList, pk)
+        RecipeViewSet.for_del(request, ShoppingList, pk)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @staticmethod
@@ -219,11 +217,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
     )
     def favorite(self, request, pk):
         if request.method == 'POST':
-            return Response(shop_and_fav.for_post(request,
-                                                  FavoriteRecipeSerializer,
-                                                  pk),
+            return Response(RecipeViewSet.for_post(request,
+                                                   FavoriteRecipeSerializer,
+                                                   pk),
                             status=status.HTTP_201_CREATED)
-        shop_and_fav.for_del(request, Favorite, pk)
+        RecipeViewSet.for_del(request, Favorite, pk)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
